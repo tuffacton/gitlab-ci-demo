@@ -1,0 +1,54 @@
+pipeline:
+  name: Harness Heart Gitlab
+  identifier: Harness_Heart_Gitlab
+  projectIdentifier: Nic_Sandbox
+  orgIdentifier: SE_Sandbox
+  tags: {}
+  stages:
+    - stage:
+        name: CD
+        identifier: CD
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            serviceRef: Nginx
+            serviceInputs:
+              serviceDefinition:
+                type: Kubernetes
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: <+input>
+                      sources: <+input>
+          environment:
+            environmentRef: nic_prod
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: Nic_Laptop_K8S
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+                    pruningEnabled: false
+            rollbackSteps:
+              - step:
+                  name: Rollback Rollout Deployment
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  timeout: 10m
+                  spec:
+                    pruningEnabled: false
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
